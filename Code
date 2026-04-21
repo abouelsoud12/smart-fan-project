@@ -10,7 +10,7 @@
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 DHT dht(DHTPIN, DHTTYPE);
 
-const float TEMP_THRESHOLD = 35.0; 
+const float TEMP_THRESHOLD = 30.0; 
 
 void setup() {
   Serial.begin(9600);
