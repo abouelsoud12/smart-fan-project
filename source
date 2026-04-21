@@ -1,0 +1,69 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <DHT.h>
+
+// إعدادات الدبابيس
+#define DHTPIN 5          
+#define DHTTYPE DHT22     // تغيير النوع إلى DHT22
+#define RELAY_PIN 3       
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+DHT dht(DHTPIN, DHTTYPE);
+
+const float TEMP_THRESHOLD = 30.0; 
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(RELAY_PIN, OUTPUT);
+  
+  // إيقاف الريلي عند البدء (لأنه Active Low)
+  digitalWrite(RELAY_PIN, HIGH); 
+
+  dht.begin();
+  lcd.begin();
+  lcd.backlight();
+
+  lcd.setCursor(0, 0);
+  lcd.print("System: DHT22");
+  lcd.setCursor(0, 1);
+  lcd.print("Initializing...");
+  delay(2000); 
+}
+
+void loop() {
+  // قراءة البيانات من DHT22
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+
+  // التأكد من صحة القراءة
+  if (isnan(h) || isnan(t)) {
+    Serial.println("Failed to read from DHT22!");
+    lcd.setCursor(0, 0);
+    lcd.print("Sensor Error!   ");
+    return;
+  }
+
+  // عرض النتائج على الـ Serial Monitor للمتابعة
+  Serial.print("Temp: "); Serial.print(t); Serial.println(" C");
+
+  // عرض البيانات على الشاشة
+  lcd.setCursor(0, 0);
+  lcd.print("Temp: ");
+  lcd.print(t, 1);
+  lcd.print((char)223); // رمز الدرجة المئوية
+  lcd.print("C  ");
+
+  lcd.setCursor(0, 1);
+  lcd.print("Fan : ");
+
+  // منطق التحكم في المروحة (Active Low)
+  if (t >= TEMP_THRESHOLD) {
+    digitalWrite(RELAY_PIN, LOW); // تشغيل
+    lcd.print("ON (Cooling) ");
+  } else {
+    digitalWrite(RELAY_PIN, HIGH); // إيقاف
+    lcd.print("OFF (Idle)   ");
+  }
+
+  delay(2000); // حساس DHT22 يحتاج ثانيتين بين كل قراءة
+}
